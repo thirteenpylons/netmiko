@@ -74,14 +74,13 @@ class LinuxSSH(CiscoSSHConnection):
     def exit_enable_mode(self, exit_command="exit"):
         """Exit enable mode."""
         delay_factor = self.select_delay_factor(delay_factor=0)
-        output = ""
         if self.check_enable_mode():
             self.write_channel(self.normalize_cmd(exit_command))
             time.sleep(0.3 * delay_factor)
             self.set_base_prompt()
             if self.check_enable_mode():
                 raise ValueError("Failed to exit enable mode.")
-        return output
+        return ""
 
     def enable(self, cmd="sudo -s", pattern="ssword", re_flags=re.IGNORECASE):
         """Attempt to become root."""

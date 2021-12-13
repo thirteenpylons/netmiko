@@ -39,9 +39,7 @@ class ExtremeExosBase(CiscoSSHConnection):
         match = re.search(r"[\*\s]*(.*)\.\d+", cur_base_prompt)
         if match:
             self.base_prompt = match.group(1)
-            return self.base_prompt
-        else:
-            return self.base_prompt
+        return self.base_prompt
 
     def send_command(self, *args, **kwargs):
         """Extreme needs special handler here due to the prompt changes."""

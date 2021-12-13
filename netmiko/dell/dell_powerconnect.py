@@ -64,11 +64,7 @@ class DellPowerConnectSSH(DellPowerConnectBase):
         """
         # Create instance of SSHClient object
         # If user does not provide SSH key, we use noauth
-        if not self.use_keys:
-            remote_conn_pre = SSHClient_noauth()
-        else:
-            remote_conn_pre = SSHClient()
-
+        remote_conn_pre = SSHClient_noauth() if not self.use_keys else SSHClient()
         # Load host_keys for better SSH security
         if self.system_host_keys:
             remote_conn_pre.load_system_host_keys()

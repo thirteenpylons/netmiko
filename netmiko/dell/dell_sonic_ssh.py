@@ -37,8 +37,7 @@ class DellSonicSSH(CiscoSSHConnection):
     def _enter_shell(self):
         """Enter the sonic-cli Shell."""
         log.debug("Enter sonic-cli Shell.")
-        output = self.send_command("sonic-cli", expect_string=r"\#")
-        return output
+        return self.send_command("sonic-cli", expect_string=r"\#")
 
     def enable(self, *args, **kwargs):
         """No enable mode on Enterprise SONiC."""

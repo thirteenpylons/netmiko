@@ -140,10 +140,9 @@ class PaloAltoPanosBase(BaseConnection):
     def strip_prompt(self, a_string):
         """Strip the trailing router prompt from the output."""
         response_list = a_string.split(self.RESPONSE_RETURN)
-        new_response_list = []
-        for line in response_list:
-            if self.base_prompt not in line:
-                new_response_list.append(line)
+        new_response_list = [
+            line for line in response_list if self.base_prompt not in line
+        ]
 
         output = self.RESPONSE_RETURN.join(new_response_list)
         return self.strip_context_items(output)

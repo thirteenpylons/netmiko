@@ -120,9 +120,8 @@ def find_cfg_file(file_name=None):
     Look for file named: .netmiko.yml or netmiko.yml
     Also allow NETMIKO_TOOLS_CFG to point directly at a file
     """
-    if file_name:
-        if os.path.isfile(file_name):
-            return file_name
+    if file_name and os.path.isfile(file_name):
+        return file_name
     optional_path = os.environ.get("NETMIKO_TOOLS_CFG", "")
     if os.path.isfile(optional_path):
         return optional_path
@@ -165,12 +164,11 @@ def display_inventory(my_devices):
 
 def obtain_all_devices(my_devices):
     """Dynamically create 'all' group."""
-    new_devices = {}
-    for device_name, device_or_group in my_devices.items():
-        # Skip any groups
-        if not isinstance(device_or_group, list):
-            new_devices[device_name] = device_or_group
-    return new_devices
+    return {
+        device_name: device_or_group
+        for device_name, device_or_group in my_devices.items()
+        if not isinstance(device_or_group, list)
+    }
 
 
 def obtain_netmiko_filename(device_name):
@@ -191,11 +189,9 @@ def ensure_dir_exists(verify_dir):
     if not os.path.exists(verify_dir):
         # Doesn't exist create dir
         os.makedirs(verify_dir)
-    else:
-        # Exists
-        if not os.path.isdir(verify_dir):
-            # Not a dir, raise an exception
-            raise ValueError(f"{verify_dir} is not a directory")
+    elif not os.path.isdir(verify_dir):
+        # Not a dir, raise an exception
+        raise ValueError(f"{verify_dir} is not a directory")
 
 
 def find_netmiko_dir():
@@ -245,7 +241,7 @@ def check_serial_port(name: str) -> str:
         msg += "available devices are: "
         ports = list(serial.tools.list_ports.comports())
         for p in ports:
-            msg += f"{str(p)},"
+            msg += f'{p},'
         raise ValueError(msg)
 
 
@@ -263,16 +259,6 @@ def get_template_dir(_skip_ntc_package=False):
     :return: directory containing the TextFSM index file
 
     """
-
-    msg = """
-Directory containing TextFSM index file not found.
-
-Please set the NET_TEXTFSM environment variable to point at the directory containing your TextFSM
-index file.
-
-Alternatively, `pip install ntc-templates` (if using ntc-templates).
-
-"""
 
     # Try NET_TEXTFSM environment variable
     template_dir = os.environ.get("NET_TEXTFSM")
@@ -304,6 +290,16 @@ Alternatively, `pip install ntc-templates` (if using ntc-templates).
 
     index = os.path.join(template_dir, "index")
     if not os.path.isdir(template_dir) or not os.path.isfile(index):
+        msg = """
+Directory containing TextFSM index file not found.
+
+Please set the NET_TEXTFSM environment variable to point at the directory containing your TextFSM
+index file.
+
+Alternatively, `pip install ntc-templates` (if using ntc-templates).
+
+"""
+
         raise ValueError(msg)
     return os.path.abspath(template_dir)
 
@@ -312,9 +308,11 @@ def clitable_to_dict(cli_table):
     """Converts TextFSM cli_table object to list of dictionaries."""
     objs = []
     for row in cli_table:
-        temp_dict = {}
-        for index, element in enumerate(row):
-            temp_dict[cli_table.header[index].lower()] = element
+        temp_dict = {
+            cli_table.header[index].lower(): element
+            for index, element in enumerate(row)
+        }
+
         objs.append(temp_dict)
     return objs
 
@@ -328,8 +326,7 @@ def _textfsm_parse(textfsm_obj, raw_output, attrs, template_file=None):
         else:
             textfsm_obj.ParseCmd(raw_output, attrs)
         structured_data = clitable_to_dict(textfsm_obj)
-        output = raw_output if structured_data == [] else structured_data
-        return output
+        return raw_output if structured_data == [] else structured_data
 
     except (FileNotFoundError, CliTableError):
         return raw_output
@@ -504,8 +501,7 @@ def get_structured_data_genie(raw_output: str, platform: str, command: str):
     try:
         # Test whether there is a parser for given command (return Exception if fails)
         get_parser(command, device)
-        parsed_output = device.parse(command, output=raw_output)
-        return parsed_output
+        return device.parse(command, output=raw_output)
     except Exception:
         return raw_output
 

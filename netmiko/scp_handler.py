@@ -93,14 +93,13 @@ class BaseFileTransfer(object):
             or "cisco_xe" in ssh_conn.device_type
             or "cisco_xr" in ssh_conn.device_type
         )
-        if not file_system:
-            if auto_flag:
-                self.file_system = self.ssh_ctl_chan._autodetect_fs()
-            else:
-                raise ValueError("Destination file system not specified")
-        else:
+        if file_system:
             self.file_system = file_system
 
+        elif auto_flag:
+            self.file_system = self.ssh_ctl_chan._autodetect_fs()
+        else:
+            raise ValueError("Destination file system not specified")
         if direction == "put":
             self.source_md5 = self.file_md5(source_file) if hash_supported else None
             self.file_size = os.stat(source_file).st_size
@@ -199,9 +198,7 @@ class BaseFileTransfer(object):
             space_avail = self.remote_space_available(search_pattern=search_pattern)
         elif self.direction == "get":
             space_avail = self.local_space_available()
-        if space_avail > self.file_size:
-            return True
-        return False
+        return space_avail > self.file_size
 
     def check_file_exists(self, remote_cmd=""):
         """Check if the dest_file already exists on the file system (return boolean)."""
@@ -253,13 +250,12 @@ class BaseFileTransfer(object):
         escape_file_name = re.escape(remote_file)
         pattern = r".*({}).*".format(escape_file_name)
         match = re.search(pattern, remote_out)
-        if match:
-            line = match.group(0)
-            # Format will be 26  -rw-   6738  Jul 30 2016 19:49:50 -07:00  filename
-            file_size = line.split()[2]
-        else:
+        if not match:
             raise IOError("Unable to parse 'dir' output in remote_file_size method")
 
+        line = match.group(0)
+        # Format will be 26  -rw-   6738  Jul 30 2016 19:49:50 -07:00  filename
+        file_size = line.split()[2]
         if "Error opening" in remote_out or "No such file or directory" in remote_out:
             raise IOError("Unable to find file on remote system")
         else:

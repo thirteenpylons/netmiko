@@ -86,7 +86,7 @@ class HuaweiBase(CiscoBaseConnection):
         prompt = prompt.strip()
 
         # Check that ends with a valid terminator character
-        if not prompt[-1] in (pri_prompt_terminator, alt_prompt_terminator):
+        if prompt[-1] not in (pri_prompt_terminator, alt_prompt_terminator):
             raise ValueError(f"Router prompt not found: {prompt}")
 
         # Strip off any leading HRP_. characters for USGv5 HA

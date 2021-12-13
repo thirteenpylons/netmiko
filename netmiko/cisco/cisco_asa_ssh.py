@@ -62,10 +62,7 @@ class CiscoAsaSSH(CiscoSSHConnection):
         updated after each context change.
         """
         output = super().send_command_timing(*args, **kwargs)
-        if len(args) >= 1:
-            command_string = args[0]
-        else:
-            command_string = kwargs["command_string"]
+        command_string = args[0] if len(args) >= 1 else kwargs["command_string"]
         if "changeto" in command_string:
             self.set_base_prompt()
         return output
@@ -75,16 +72,11 @@ class CiscoAsaSSH(CiscoSSHConnection):
         If the ASA is in multi-context mode, then the base_prompt needs to be
         updated after each context change.
         """
-        if len(args) >= 1:
-            command_string = args[0]
-        else:
-            command_string = kwargs["command_string"]
-
+        command_string = args[0] if len(args) >= 1 else kwargs["command_string"]
         # If changeto in command, look for '#' to determine command is done
-        if "changeto" in command_string:
-            if len(args) <= 1:
-                expect_string = kwargs.get("expect_string", "#")
-                kwargs["expect_string"] = expect_string
+        if "changeto" in command_string and len(args) <= 1:
+            expect_string = kwargs.get("expect_string", "#")
+            kwargs["expect_string"] = expect_string
         output = super().send_command(*args, **kwargs)
 
         if "changeto" in command_string:
@@ -123,11 +115,10 @@ class CiscoAsaSSH(CiscoSSHConnection):
         """
         delay_factor = self.select_delay_factor(0)
 
-        i = 1
         max_attempts = 10
         self.write_channel("login" + self.RETURN)
         output = self.read_until_pattern(pattern=r"login")
-        while i <= max_attempts:
+        for _ in range(1, max_attempts + 1):
             time.sleep(0.5 * delay_factor)
             output = self.read_channel()
             if "sername" in output:
@@ -138,8 +129,6 @@ class CiscoAsaSSH(CiscoSSHConnection):
                 return
             else:
                 self.write_channel("login" + self.RETURN)
-            i += 1
-
         msg = "Unable to enter enable mode!"
         raise NetmikoAuthenticationException(msg)
 

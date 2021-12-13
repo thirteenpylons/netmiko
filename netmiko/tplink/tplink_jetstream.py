@@ -47,13 +47,13 @@ class TPLinkJetStreamBase(CiscoSSHConnection):
             return super().enable(cmd=cmd, pattern=pattern, re_flags=re_flags)
 
         output = ""
-        msg = (
-            "Failed to enter enable mode. Please ensure you pass "
-            "the 'secret' argument to ConnectHandler."
-        )
-
         cmds = ["enable", "enable-admin"]
         if not self.check_enable_mode():
+            msg = (
+                "Failed to enter enable mode. Please ensure you pass "
+                "the 'secret' argument to ConnectHandler."
+            )
+
             for cmd in cmds:
                 self.write_channel(self.normalize_cmd(cmd))
                 try:
@@ -96,8 +96,6 @@ class TPLinkJetStreamBase(CiscoSSHConnection):
 
         if self.check_config_mode():
             raise ValueError("Failed to exit configuration mode")
-            log.debug(f"exit_config_mode: {output}")
-
         return output
 
     def check_config_mode(self, check_string="(config", pattern=r"#"):

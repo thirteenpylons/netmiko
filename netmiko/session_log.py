@@ -13,10 +13,7 @@ class SessionLog:
         no_log: Dict[str, Any] = None,
         record_writes: bool = False,
     ) -> None:
-        if no_log is None:
-            self.no_log = {}
-        else:
-            self.no_log = no_log
+        self.no_log = {} if no_log is None else no_log
         self.file_name = file_name
         self.file_mode = file_mode
         self.file_encoding = file_encoding
@@ -54,7 +51,7 @@ class SessionLog:
             self.session_log = None
 
     def write(self, data: str) -> None:
-        if self.session_log is not None and len(data) > 0:
+        if self.session_log is not None and data != '':
             # Hide the password and secret in the session_log
             for hidden_data in self.no_log.values():
                 data = data.replace(hidden_data, "********")
@@ -64,7 +61,5 @@ class SessionLog:
             else:
                 self.session_log.write(data)
 
-            assert isinstance(self.session_log, io.BufferedIOBase) or isinstance(
-                self.session_log, io.TextIOBase
-            )
+            assert isinstance(self.session_log, (io.BufferedIOBase, io.TextIOBase))
             self.session_log.flush()

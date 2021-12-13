@@ -38,6 +38,7 @@ Examples
 >>> remote_device['device_type'] = best_match
 >>> connection = ConnectHandler(**remote_device)
 """
+
 import re
 import time
 from netmiko.ssh_dispatcher import ConnectHandler
@@ -231,7 +232,7 @@ cmd_count = {}
 for k, v in SSH_MAPPER_BASE.items():
     count = cmd_count.setdefault(v["cmd"], 0)
     cmd_count[v["cmd"]] = count + 1
-cmd_count = {k: v for k, v in sorted(cmd_count.items(), key=lambda item: item[1])}
+cmd_count = dict(sorted(cmd_count.items(), key=lambda item: item[1]))
 
 # SSH_MAPPER_BASE will be a list after this
 SSH_MAPPER_BASE = sorted(
@@ -351,12 +352,11 @@ class SSHDetect(object):
             The response from the remote device.
         """
         cached_results = self._results_cache.get(cmd)
-        if not cached_results:
-            response = self._send_command(cmd)
-            self._results_cache[cmd] = response
-            return response
-        else:
+        if cached_results:
             return cached_results
+        response = self._send_command(cmd)
+        self._results_cache[cmd] = response
+        return response
 
     def _autodetect_remote_version(
         self, search_patterns=None, re_flags=re.IGNORECASE, priority=99, **kwargs
