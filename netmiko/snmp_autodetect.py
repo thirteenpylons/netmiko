@@ -20,6 +20,7 @@ SNMPDetect class defaults to SNMPv3
 Note, pysnmp is a required dependency for SNMPDetect and is intentionally not included in
 netmiko requirements. So installation of pysnmp might be required.
 """
+
 import re
 
 try:
@@ -109,12 +110,13 @@ SNMP_MAPPER_BASE = {
     },
 }
 
-# Ensure all SNMP device types are supported by Netmiko
-SNMP_MAPPER = {}
 std_device_types = list(CLASS_MAPPER.keys())
-for device_type in std_device_types:
-    if SNMP_MAPPER_BASE.get(device_type):
-        SNMP_MAPPER[device_type] = SNMP_MAPPER_BASE[device_type]
+# Ensure all SNMP device types are supported by Netmiko
+SNMP_MAPPER = {
+    device_type: SNMP_MAPPER_BASE[device_type]
+    for device_type in std_device_types
+    if SNMP_MAPPER_BASE.get(device_type)
+}
 
 
 class SNMPDetect(object):
@@ -187,7 +189,7 @@ class SNMPDetect(object):
     ):
 
         # Check that the SNMP version is matching predefined type or raise ValueError
-        if snmp_version == "v1" or snmp_version == "v2c":
+        if snmp_version in ["v1", "v2c"]:
             if not community:
                 raise ValueError("SNMP version v1/v2c community must be set.")
         elif snmp_version == "v3":
@@ -317,9 +319,7 @@ class SNMPDetect(object):
             The name of the device_type that must be running.
         """
         # Convert SNMP_MAPPER to a list and sort by priority
-        snmp_mapper_list = []
-        for k, v in SNMP_MAPPER.items():
-            snmp_mapper_list.append({k: v})
+        snmp_mapper_list = [{k: v} for k, v in SNMP_MAPPER.items()]
         snmp_mapper_list = sorted(
             snmp_mapper_list, key=lambda x: list(x.values())[0]["priority"]
         )

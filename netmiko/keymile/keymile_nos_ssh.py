@@ -19,14 +19,13 @@ class KeymileNOSSSH(CiscoIosBase):
         check the output for substring Login incorrect after connecting."""
         output = super()._test_channel_read(count=count, pattern=pattern)
         pattern = r"Login incorrect"
-        if re.search(pattern, output):
-            self.paramiko_cleanup()
-            msg = "Authentication failure: unable to connect"
-            msg += f"{self.device_type} {self.host}:{self.port}"
-            msg += self.RESPONSE_RETURN + "Login incorrect"
-            raise NetmikoAuthenticationException(msg)
-        else:
+        if not re.search(pattern, output):
             return output
+        self.paramiko_cleanup()
+        msg = "Authentication failure: unable to connect"
+        msg += f"{self.device_type} {self.host}:{self.port}"
+        msg += self.RESPONSE_RETURN + "Login incorrect"
+        raise NetmikoAuthenticationException(msg)
 
     def special_login_handler(self, delay_factor=1):
         """Since Keymile NOS always returns True on paramiko.connect() we

@@ -50,7 +50,7 @@ def setup_initial_state(net_connect, commands, expected_responses):
 
     # Setup initial state
     config_commands, support_commit, config_verify = retrieve_commands(commands)
-    setup_base_config(net_connect, config_commands[0:1])
+    setup_base_config(net_connect, config_commands[:1])
 
     cmd_response = expected_responses.get("cmd_response_init", config_commands[0])
     initial_state = config_change_verify(net_connect, config_verify, cmd_response)
@@ -72,10 +72,7 @@ def config_change_verify(net_connect, verify_cmd, cmd_response):
     Send verify_cmd down channel, verify cmd_response in output
     """
     config_commands_output = net_connect.send_command_expect(verify_cmd)
-    if cmd_response in config_commands_output:
-        return True
-    else:
-        return False
+    return cmd_response in config_commands_output
 
 
 def test_ssh_connect(net_connect, commands, expected_responses):

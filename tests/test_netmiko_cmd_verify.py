@@ -19,7 +19,7 @@ def test_cmd_verify_decorator(net_connect_cmd_verify):
 
     # Global True should have precedence
     obj.global_cmd_verify = True
-    assert obj.global_cmd_verify is True
+    assert obj.global_cmd_verify
     (obj, args, kwargs) = bogus_func(net_connect_cmd_verify, cmd_verify=True)
     assert kwargs["cmd_verify"] is True
     (obj, args, kwargs) = bogus_func(net_connect_cmd_verify, cmd_verify=False)

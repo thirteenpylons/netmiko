@@ -69,7 +69,7 @@ class Row(dict):
     def __init__(self, *args, **kwargs):
         super(Row, self).__init__(*args, **kwargs)
         self._keys = list()
-        self._values = list()
+        self._values = []
         self.row = None
         self.table = None
         self._color = None
@@ -95,10 +95,7 @@ class Row(dict):
           IndexError: The given column(s) were not found.
         """
         if isinstance(column, (list, tuple)):
-            ret = []
-            for col in column:
-                ret.append(self[col])
-            return ret
+            return [self[col] for col in column]
 
         try:
             return self._values[self._index[column]]
@@ -133,9 +130,7 @@ class Row(dict):
         return len(self._keys)
 
     def __str__(self):
-        ret = ""
-        for v in self._values:
-            ret += "%12s  " % v
+        ret = "".join("%12s  " % v for v in self._values)
         ret += "\n"
         return ret
 
@@ -154,10 +149,7 @@ class Row(dict):
           A list or string with column value(s) or default_value if not found.
         """
         if isinstance(column, (list, tuple)):
-            ret = []
-            for col in column:
-                ret.append(self.get(col, default_value))
-            return ret
+            return [self.get(col, default_value) for col in column]
         # Perhaps we have a range like '1', ':-1' or '1:'.
         try:
             return self._values[column]
@@ -246,10 +238,7 @@ class Row(dict):
         def _ToStr(value):
             """Convert individul list entries to string."""
             if isinstance(value, (list, tuple)):
-                result = []
-                for val in value:
-                    result.append(str(val))
-                return result
+                return [str(val) for val in value]
             else:
                 return str(value)
 
@@ -497,11 +486,7 @@ class TextTable(object):
                 if k not in self._Header():
                     raise IndexError("Unknown key: '%s'", k)
 
-        extend_with = []
-        for column in table.header:
-            if column not in self.header:
-                extend_with.append(column)
-
+        extend_with = [column for column in table.header if column not in self.header]
         if not extend_with:
             return
 
@@ -616,11 +601,12 @@ class TextTable(object):
           The whole table including headers as a string. Each row is
           joined by a newline and each entry by self.separator.
         """
-        result = []
         # Avoid the global lookup cost on each iteration.
         lstr = str
-        for row in self._table:
-            result.append("%s\n" % self.separator.join(lstr(v) for v in row))
+        result = [
+            "%s\n" % self.separator.join(lstr(v) for v in row)
+            for row in self._table
+        ]
 
         return "".join(result)
 
@@ -931,11 +917,7 @@ class TextTable(object):
             if label not in self._Header():
                 raise TableError("Invalid label prefix: %s." % label)
 
-        sorted_list = []
-        for header in self._Header():
-            if header in label_list:
-                sorted_list.append(header)
-
+        sorted_list = [header for header in self._Header() if header in label_list]
         label_str = "# LABEL %s\n" % ".".join(sorted_list)
 
         body = []

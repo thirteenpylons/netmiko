@@ -121,7 +121,7 @@ class CienaSaosFileTransfer(BaseFileTransfer):
         header_line, filesystem_line = remote_output.splitlines()
 
         filesystem, _, _, space_avail, *_ = header_line.split()
-        if "Filesystem" != filesystem or "Avail" not in space_avail:
+        if filesystem != "Filesystem" or "Avail" not in space_avail:
             # Filesystem 1K-blocks Used Available Use% Mounted on
             raise ValueError(err_msg)
 

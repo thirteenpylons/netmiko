@@ -30,8 +30,7 @@ def commands(platform):
 def generate_csv_timestamp():
     """yyyy-MM-dd HH:mm:ss"""
     now = datetime.now()
-    t_stamp = f"{now.year}-{now.month}-{now.day} {now.hour}:{now.minute}:{now.second}"
-    return t_stamp
+    return f"{now.year}-{now.month}-{now.day} {now.hour}:{now.minute}:{now.second}"
 
 
 def write_csv(device_name, netmiko_results):
@@ -66,7 +65,7 @@ def f_exec_time(func):
         result = func(*args, **kwargs)
         end_time = datetime.now()
         time_delta = end_time - start_time
-        print(f"{str(func)}: Elapsed time: {time_delta}")
+        print(f'{func}: Elapsed time: {time_delta}')
         return (time_delta, result)
 
     return wrapper_decorator

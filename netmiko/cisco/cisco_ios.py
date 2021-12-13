@@ -88,9 +88,8 @@ class InLineTransfer(CiscoIosFileTransfer):
             raise NotImplementedError(
                 "Progress bar is not supported on inline transfers."
             )
-        else:
-            self.progress = progress
-            self.progress4 = progress4
+        self.progress = progress
+        self.progress4 = progress4
 
         self.ssh_ctl_chan = ssh_conn
         if source_file:
@@ -156,11 +155,11 @@ class InLineTransfer(CiscoIosFileTransfer):
         return output
 
     def _exit_tcl_mode(self):
-        TCL_EXIT = "tclquit"
         self.ssh_ctl_chan.write_channel("\r")
         time.sleep(1)
         output = self.ssh_ctl_chan.read_channel()
         if "(tcl)" in output:
+            TCL_EXIT = "tclquit"
             self.ssh_ctl_chan.write_channel(TCL_EXIT + "\r")
         time.sleep(1)
         output += self.ssh_ctl_chan.read_channel()

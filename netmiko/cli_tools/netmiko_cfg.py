@@ -125,7 +125,7 @@ def main(args):
     start_time = datetime.now()
     cli_args = parse_arguments(args)
 
-    cli_username = cli_args.username if cli_args.username else None
+    cli_username = cli_args.username or None
     cli_password = getpass() if cli_args.password else None
     cli_secret = getpass("Enable secret: ") if cli_args.secret else None
 
@@ -215,15 +215,14 @@ def main(args):
     if cli_args.display_runtime:
         print("Total time: {0}".format(datetime.now() - start_time))
 
-    if not hide_failed:
-        if failed_devices:
-            print("\n")
-            print("-" * 20)
-            print("Failed devices:")
-            failed_devices.sort()
-            for device_name in failed_devices:
-                print("  {}".format(device_name))
-            print()
+    if not hide_failed and failed_devices:
+        print("\n")
+        print("-" * 20)
+        print("Failed devices:")
+        failed_devices.sort()
+        for device_name in failed_devices:
+            print("  {}".format(device_name))
+        print()
     return 0
 
 

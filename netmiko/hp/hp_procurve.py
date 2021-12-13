@@ -45,13 +45,12 @@ class HPProcurveBase(CiscoSSHConnection):
             return ""
 
         output = ""
-        i = 1
         max_attempts = 5
-        while i <= max_attempts:
+        username_pattern = r"(username|login|user name)"
+        for _ in range(1, max_attempts + 1):
             self.write_channel(cmd + self.RETURN)
             time.sleep(0.3 * delay_factor)
             new_output = self.read_channel()
-            username_pattern = r"(username|login|user name)"
             if re.search(username_pattern, new_output, flags=re_flags):
                 output += new_output
                 new_output = self.send_command_timing(default_username)
@@ -63,15 +62,13 @@ class HPProcurveBase(CiscoSSHConnection):
                     output += new_output
                     return output
             output += new_output
-            i += 1
-
         log.debug(f"{output}")
         self.clear_buffer()
-        msg = (
-            "Failed to enter enable mode. Please ensure you pass "
-            "the 'secret' argument to ConnectHandler."
-        )
         if not self.check_enable_mode():
+            msg = (
+                "Failed to enter enable mode. Please ensure you pass "
+                "the 'secret' argument to ConnectHandler."
+            )
             raise ValueError(msg)
         return output
 

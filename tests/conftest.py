@@ -34,8 +34,7 @@ def net_connect(request):
     test_devices = parse_yaml(PWD + "/etc/test_devices.yml")
     device = test_devices[device_under_test]
     device["verbose"] = False
-    conn = ConnectHandler(**device)
-    return conn
+    return ConnectHandler(**device)
 
 
 @pytest.fixture(scope="module")
@@ -53,8 +52,7 @@ def net_connect_cmd_verify(request):
     device["verbose"] = False
     device["fast_cli"] = False
     device["global_cmd_verify"] = False
-    conn = ConnectHandler(**device)
-    return conn
+    return ConnectHandler(**device)
 
 
 @pytest.fixture(scope="function")
@@ -69,8 +67,7 @@ def net_connect_newconn(request):
     test_devices = parse_yaml(PWD + "/etc/test_devices.yml")
     device = test_devices[device_under_test]
     device["verbose"] = False
-    conn = ConnectHandler(**device)
-    return conn
+    return ConnectHandler(**device)
 
 
 @pytest.fixture()
@@ -103,8 +100,7 @@ def net_connect_slog_wr(request):
     # Overwrite default session_log location
     device["session_log"] = "SLOG/cisco881_slog_wr.log"
     device["session_log_record_writes"] = True
-    conn = ConnectHandler(**device)
-    return conn
+    return ConnectHandler(**device)
 
 
 @pytest.fixture(scope="module")
@@ -257,22 +253,20 @@ def delete_file_ciena_saos(ssh_conn, dest_file_system, dest_file):
     """Delete a remote file for a ciena device."""
     full_file_name = "{}/{}".format(dest_file_system, dest_file)
     cmd = "file rm {}".format(full_file_name)
-    output = ssh_conn.send_command_timing(cmd, strip_command=False, strip_prompt=False)
-    return output
+    return ssh_conn.send_command_timing(
+        cmd, strip_command=False, strip_prompt=False
+    )
 
 
 def delete_file_nokia_sros(ssh_conn, dest_file_system, dest_file):
     """Delete a remote file for a Nokia SR OS device."""
     full_file_name = "{}/{}".format(dest_file_system, dest_file)
     cmd = "file delete {} force".format(full_file_name)
-    cmd_prefix = ""
-    if "@" in ssh_conn.base_prompt:
-        cmd_prefix = "//"
+    cmd_prefix = "//" if "@" in ssh_conn.base_prompt else ""
     ssh_conn.send_command(cmd_prefix + "environment no more")
-    output = ssh_conn.send_command_timing(
+    return ssh_conn.send_command_timing(
         cmd_prefix + cmd, strip_command=False, strip_prompt=False
     )
-    return output
 
 
 @pytest.fixture(scope="module")

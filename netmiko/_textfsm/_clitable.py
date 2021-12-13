@@ -368,26 +368,14 @@ class CliTable(texttable.TextTable):
     @property
     def superkey(self):
         """Returns a set of column names that together constitute the superkey."""
-        sorted_list = []
-        for header in self.header:
-            if header in self._keys:
-                sorted_list.append(header)
-        return sorted_list
+        return [header for header in self.header if header in self._keys]
 
     def KeyValue(self, row=None):
         """Returns the super key value for the row."""
         if not row:
-            if self._iterator:
-                # If we are inside an iterator use current row iteration.
-                row = self[self._iterator]
-            else:
-                row = self.row
+            row = self[self._iterator] if self._iterator else self.row
         # If no superkey then use row number.
         if not self.superkey:
             return ["%s" % row.row]
 
-        sorted_list = []
-        for header in self.header:
-            if header in self.superkey:
-                sorted_list.append(row[header])
-        return sorted_list
+        return [row[header] for header in self.header if header in self.superkey]

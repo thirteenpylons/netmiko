@@ -27,15 +27,11 @@ class NetscalerSSH(BaseConnection):
         Netscaler has '>' for the prompt.
         """
         prompt = self.find_prompt(delay_factor=delay_factor)
-        if not prompt[-1] in (pri_prompt_terminator, alt_prompt_terminator):
+        if prompt[-1] not in (pri_prompt_terminator, alt_prompt_terminator):
             raise ValueError(f"Router prompt not found: {repr(prompt)}")
 
         prompt = prompt.strip()
-        if len(prompt) == 1:
-            self.base_prompt = prompt
-        else:
-            # Strip off trailing terminator
-            self.base_prompt = prompt[:-1]
+        self.base_prompt = prompt if len(prompt) == 1 else prompt[:-1]
         return self.base_prompt
 
     def check_config_mode(self):

@@ -24,8 +24,7 @@ def read_session_log(session_file, append=False):
         if append is True:
             line = f.readline().decode()
             assert "Initial file contents" in line
-        log_content = f.read().lstrip()
-        return log_content
+        return f.read().lstrip()
 
 
 def session_action(my_connect, command):

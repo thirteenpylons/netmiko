@@ -84,10 +84,10 @@ def test_config_set_longcommand(net_connect, commands, expected_responses):
 
 
 def test_config_hostname(net_connect, commands, expected_responses):
-    hostname = "test-netmiko1"
-    command = f"hostname {hostname}"
     if "arista" in net_connect.device_type:
         current_hostname = net_connect.find_prompt()[:-1]
+        hostname = "test-netmiko1"
+        command = f"hostname {hostname}"
         net_connect.send_config_set(command)
         new_hostname = net_connect.find_prompt()
         assert hostname in new_hostname

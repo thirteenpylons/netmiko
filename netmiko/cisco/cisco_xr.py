@@ -100,7 +100,7 @@ class CiscoXrBase(CiscoBaseConnection):
             else:
                 command_string = f"commit label {label}"
         elif confirm:
-            command_string = f"commit confirmed {str(confirm_delay)}"
+            command_string = f'commit confirmed {confirm_delay}'
         elif comment:
             command_string = f"commit comment {comment}"
         else:

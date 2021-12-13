@@ -90,9 +90,10 @@ def log_writes(func: F) -> F:
                     str(write_bytes(out_data, encoding=self.encoding))
                 )
             )
-            if self.session_log:
-                if self.session_log.fin or self.session_log.record_writes:
-                    self.session_log.write(out_data)
+            if self.session_log and (
+                self.session_log.fin or self.session_log.record_writes
+            ):
+                self.session_log.write(out_data)
         except UnicodeDecodeError:
             # Don't log non-ASCII characters; this is null characters and telnet IAC (PY2)
             pass
@@ -293,10 +294,7 @@ class BaseConnection:
 
         self.TELNET_RETURN = "\r\n"
         if default_enter is None:
-            if "telnet" not in device_type:
-                self.RETURN = "\n"
-            else:
-                self.RETURN = self.TELNET_RETURN
+            self.RETURN = "\n" if "telnet" not in device_type else self.TELNET_RETURN
         else:
             self.RETURN = default_enter
 
@@ -309,10 +307,7 @@ class BaseConnection:
         if not ip and not host and "serial" not in device_type:
             raise ValueError("Either ip or host must be set")
         if port is None:
-            if "telnet" in device_type:
-                port = 23
-            else:
-                port = 22
+            port = 23 if "telnet" in device_type else 22
         self.port = int(port)
 
         self.username = username
@@ -383,8 +378,7 @@ class BaseConnection:
             comm_port = self.serial_settings.pop("port")
             # Get the proper comm port reference if a name was enterred
             comm_port = check_serial_port(comm_port)
-            self.serial_settings.update({"port": comm_port})
-
+            self.serial_settings["port"] = comm_port
         self.fast_cli = fast_cli
         self._legacy_mode = _legacy_mode
         self.global_delay_factor = global_delay_factor
@@ -505,7 +499,6 @@ class BaseConnection:
 
     def is_alive(self) -> bool:
         """Returns a boolean flag with the state of the connection."""
-        null = chr(0)
         if self.remote_conn is None:
             log.error("Connection is not initialised, is_alive returns False")
             return False
@@ -522,6 +515,7 @@ class BaseConnection:
             except AttributeError:
                 return False
         else:
+            null = chr(0)
             # SSH
             try:
                 # Try sending ASCII null byte to maintain the connection alive
@@ -768,9 +762,8 @@ You can look at the Netmiko session_log or debug log for more information.
         """
         delay_factor = self.select_delay_factor(delay_factor)
 
-        if delay_factor < 1:
-            if not self._legacy_mode and self.fast_cli:
-                delay_factor = 1
+        if delay_factor < 1 and not self._legacy_mode and self.fast_cli:
+            delay_factor = 1
 
         time.sleep(1 * delay_factor)
 
@@ -1023,15 +1016,14 @@ Device settings: {self.device_type} {self.host}:{self.port}
                 raise NetmikoAuthenticationException(msg)
             except paramiko.ssh_exception.SSHException as no_session_err:
                 self.paramiko_cleanup()
-                if "No existing session" in str(no_session_err):
-                    msg = (
-                        "Paramiko: 'No existing session' error: "
-                        "try increasing 'conn_timeout' to 10 seconds or larger."
-                    )
-                    raise NetmikoTimeoutException(msg)
-                else:
+                if "No existing session" not in str(no_session_err):
                     raise
 
+                msg = (
+                    "Paramiko: 'No existing session' error: "
+                    "try increasing 'conn_timeout' to 10 seconds or larger."
+                )
+                raise NetmikoTimeoutException(msg)
             if self.verbose:
                 print(f"SSH connection established to {self.host}:{self.port}")
 
@@ -1063,10 +1055,8 @@ Device settings: {self.device_type} {self.host}:{self.port}
             main_delay: float, increment: float = 1.1, maximum: int = 8
         ) -> float:
             """Increment sleep time to a maximum value."""
-            main_delay = main_delay * increment
-            if main_delay >= maximum:
-                main_delay = maximum
-            return main_delay
+            main_delay *= increment
+            return min(main_delay, maximum)
 
         i = 0
         delay_factor = self.select_delay_factor(delay_factor=0)
@@ -1116,16 +1106,16 @@ Device settings: {self.device_type} {self.host}:{self.port}
         :param delay_factor: See __init__: global_delay_factor
         :type delay_factor: int
         """
-        if self.fast_cli:
-            if delay_factor and delay_factor <= self.global_delay_factor:
-                return delay_factor
-            else:
-                return self.global_delay_factor
+        if (
+            self.fast_cli
+            and delay_factor
+            and delay_factor <= self.global_delay_factor
+            or not self.fast_cli
+            and delay_factor >= self.global_delay_factor
+        ):
+            return delay_factor
         else:
-            if delay_factor >= self.global_delay_factor:
-                return delay_factor
-            else:
-                return self.global_delay_factor
+            return self.global_delay_factor
 
     def special_login_handler(self, delay_factor=1):
         """Handler for devices like WLC, Extreme ERS that throw up characters prior to login."""
@@ -1188,12 +1178,11 @@ Device settings: {self.device_type} {self.host}:{self.port}
 
         # Avoid cmd_verify here as terminal width must be set before doing cmd_verify
         if cmd_verify and self.global_cmd_verify is not False:
-            output = self.read_until_pattern(pattern=re.escape(command.strip()))
+            return self.read_until_pattern(pattern=re.escape(command.strip()))
         elif pattern:
-            output = self.read_until_pattern(pattern=pattern)
+            return self.read_until_pattern(pattern=pattern)
         else:
-            output = self.read_until_prompt()
-        return output
+            return self.read_until_prompt()
 
     # Retry by sleeping .33 and then double sleep until 5 attempts (.33, .66, 1.32, etc)
     @retry(
@@ -1224,7 +1213,7 @@ Device settings: {self.device_type} {self.host}:{self.port}
         :param delay_factor: See __init__: global_delay_factor
         """
         prompt = self.find_prompt(delay_factor=delay_factor)
-        if not prompt[-1] in (pri_prompt_terminator, alt_prompt_terminator):
+        if prompt[-1] not in (pri_prompt_terminator, alt_prompt_terminator):
             raise ValueError(f"Router prompt not found: {repr(prompt)}")
         # Strip off trailing terminator
         self.base_prompt = prompt[:-1]
@@ -1281,7 +1270,7 @@ Device settings: {self.device_type} {self.host}:{self.port}
             log.debug("Clear buffer detects data in the channel")
             if backoff:
                 sleep_time *= 2
-                sleep_time = 3 if sleep_time >= 3 else sleep_time
+                sleep_time = min(sleep_time, 3)
 
     def command_echo_read(self, cmd, read_timeout):
 
@@ -1296,9 +1285,6 @@ Device settings: {self.device_type} {self.host}:{self.port}
         if len(lines) == 2:
             # lines[-1] should realistically just be the null string
             new_data = f"{cmd}{lines[-1]}"
-        else:
-            # cmd exists in the output multiple times? Just retain the original output
-            pass
         return new_data
 
     @select_cmd_verify
@@ -1536,10 +1522,8 @@ where x is the total number of seconds to wait before timing out.\n"""
                     if re.search(search_pattern, output):
                         break
 
-                else:
-                    # Check if pattern is in the past three reads
-                    if re.search(search_pattern, "".join(past_three_reads)):
-                        break
+                elif re.search(search_pattern, "".join(past_three_reads)):
+                    break
 
             time.sleep(loop_delay)
             new_data = self.read_channel()
@@ -1610,13 +1594,12 @@ You can also look at the Netmiko session_log or debug log for more information.
         # Juniper has a weird case where the echoed command will be " \n"
         # i.e. there is an extra space there.
         cmd = command_string.strip()
-        if output.startswith(cmd):
-            output_lines = output.split(self.RESPONSE_RETURN)
-            new_output = output_lines[1:]
-            return self.RESPONSE_RETURN.join(new_output)
-        else:
+        if not output.startswith(cmd):
             # command_string isn't there; do nothing
             return output
+        output_lines = output.split(self.RESPONSE_RETURN)
+        new_output = output_lines[1:]
+        return self.RESPONSE_RETURN.join(new_output)
 
     def normalize_linefeeds(self, a_string: str) -> str:
         """Convert `\r\r\n`,`\r\n`, `\n\r` to `\n.`
@@ -1671,15 +1654,15 @@ You can also look at the Netmiko session_log or debug log for more information.
         :param re_flags: Regular expression flags used in conjunction with pattern
         """
         output = ""
-        msg = (
-            "Failed to enter enable mode. Please ensure you pass "
-            "the 'secret' argument to ConnectHandler."
-        )
-
         # Check if in enable mode
         if not self.check_enable_mode():
             # Send "enable" mode command
             self.write_channel(self.normalize_cmd(cmd))
+            msg = (
+                "Failed to enter enable mode. Please ensure you pass "
+                "the 'secret' argument to ConnectHandler."
+            )
+
             try:
                 # Read the command echo
                 end_data = ""
@@ -1700,9 +1683,8 @@ You can also look at the Netmiko session_log or debug log for more information.
                 # Search for terminating pattern if defined
                 if enable_pattern and not re.search(enable_pattern, output):
                     output += self.read_until_pattern(pattern=enable_pattern)
-                else:
-                    if not self.check_enable_mode():
-                        raise ValueError(msg)
+                elif not self.check_enable_mode():
+                    raise ValueError(msg)
             except NetmikoTimeoutException:
                 raise ValueError(msg)
         return output
@@ -1913,10 +1895,9 @@ You can also look at the Netmiko session_log or debug log for more information.
                 pattern = f"(?:{re.escape(self.base_prompt)}.*$|{terminator}.*$)"
                 output += self.read_until_pattern(pattern=pattern, re_flags=re.M)
 
-                if error_pattern:
-                    if re.search(error_pattern, output, flags=re.M):
-                        msg = f"Invalid input detected at command: {cmd}"
-                        raise ConfigInvalidException(msg)
+                if error_pattern and re.search(error_pattern, output, flags=re.M):
+                    msg = f"Invalid input detected at command: {cmd}"
+                    raise ConfigInvalidException(msg)
 
         if exit_config_mode:
             output += self.exit_config_mode()
@@ -2036,9 +2017,7 @@ You can also look at the Netmiko session_log or debug log for more information.
             self.cleanup()
             if self.protocol == "ssh":
                 self.paramiko_cleanup()
-            elif self.protocol == "telnet":
-                self.remote_conn.close()
-            elif self.protocol == "serial":
+            elif self.protocol in ["telnet", "serial"]:
                 self.remote_conn.close()
         except Exception:
             # There have been race conditions observed on disconnect.

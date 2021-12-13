@@ -87,7 +87,7 @@ class CdotCrosSSH(CiscoBaseConnection):
             read_timeout=read_timeout,
         )
 
-        if not (any(x in output for x in commit_marker)):
+        if all(x not in output for x in commit_marker):
             raise ValueError(f"Commit failed with the following errors:\n\n{output}")
         if and_quit:
             self.exit_config_mode()
@@ -117,5 +117,4 @@ class CdotCrosSSH(CiscoBaseConnection):
         command = "complete-on-space false"
         self.write_channel(self.normalize_cmd(command))
         time.sleep(delay_factor * 0.1)
-        output = self.read_channel()
-        return output
+        return self.read_channel()

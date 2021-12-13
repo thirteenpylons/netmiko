@@ -24,10 +24,6 @@ def test_disable_paging(net_connect, commands, expected_responses):
     if net_connect.device_type == "arista_eos":
         # Arista logging buffer gets enormous
         net_connect.send_command("clear logging")
-    elif net_connect.device_type == "arista_eos":
-        # NX-OS logging buffer gets enormous (NX-OS fails when testing very high-latency +
-        # packet loss)
-        net_connect.send_command("clear logging logfile")
     multiple_line_output = net_connect.send_command(commands["extended_output"])
     assert expected_responses["multiple_line_output"] in multiple_line_output
 

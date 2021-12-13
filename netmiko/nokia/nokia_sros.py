@@ -89,9 +89,7 @@ class NokiaSros(BaseConnection):
 
     def check_enable_mode(self, check_string: str = "in admin mode") -> bool:
         """Check if in enable mode."""
-        cmd = "enable"
-        if "@" not in self.base_prompt:
-            cmd = "enable-admin"
+        cmd = "enable-admin" if "@" not in self.base_prompt else "enable"
         self.write_channel(self.normalize_cmd(cmd))
         output = self.read_until_prompt_or_pattern(
             pattern="ssword", read_entire_line=True
@@ -136,9 +134,7 @@ class NokiaSros(BaseConnection):
             self.write_channel(self.normalize_cmd(cmd))
             if self.global_cmd_verify is not False:
                 output += self.read_until_pattern(pattern=re.escape(cmd))
-                output += self.read_until_prompt(read_entire_line=True)
-            else:
-                output += self.read_until_prompt(read_entire_line=True)
+            output += self.read_until_prompt(read_entire_line=True)
         if self.check_config_mode():
             raise ValueError("Failed to exit configuration mode")
         return output
@@ -160,7 +156,7 @@ class NokiaSros(BaseConnection):
         """Model driven CLI requires you not exit from configuration mode."""
         if exit_config_mode is None:
             # Set to False if model-driven CLI
-            exit_config_mode = False if "@" in self.base_prompt else True
+            exit_config_mode = "@" not in self.base_prompt
         return super().send_config_set(
             config_commands=config_commands, exit_config_mode=exit_config_mode, **kwargs
         )
@@ -188,9 +184,7 @@ class NokiaSros(BaseConnection):
         # Make sure you read until you detect the command echo (avoid getting out of sync)
         if self.global_cmd_verify is not False:
             output += self.read_until_pattern(pattern=re.escape(exit_cmd))
-            output += self.read_until_prompt(read_entire_line=True)
-        else:
-            output += self.read_until_prompt(read_entire_line=True)
+        output += self.read_until_prompt(read_entire_line=True)
         return output
 
     def _discard(self):
@@ -210,12 +204,11 @@ class NokiaSros(BaseConnection):
     def strip_prompt(self, *args, **kwargs):
         """Strip prompt from the output."""
         output = super().strip_prompt(*args, **kwargs)
-        if "@" in self.base_prompt:
-            # Remove context prompt too
-            strips = r"[\r\n]*\!?\*?(\((ex|gl|pr|ro)\))?\[\S*\][\r\n]*"
-            return re.sub(strips, "", output)
-        else:
+        if "@" not in self.base_prompt:
             return output
+        # Remove context prompt too
+        strips = r"[\r\n]*\!?\*?(\((ex|gl|pr|ro)\))?\[\S*\][\r\n]*"
+        return re.sub(strips, "", output)
 
     def cleanup(self, command="logout"):
         """Gracefully exit the SSH session."""
@@ -314,8 +307,7 @@ class NokiaSrosFileTransfer(BaseFileTransfer):
         if not match:
             raise ValueError("Filename entry not found in dir output")
 
-        file_size = int(match.group(1))
-        return file_size
+        return int(match.group(1))
 
     def verify_file(self):
         """Verify the file has been transferred correctly based on filesize."""
